@@ -116,7 +116,7 @@ public class BookController {
                                 e.printStackTrace();
                             }
                         }
-                        String fileAddr = relativePath + fileName;
+                        String fileAddr = relativePath + fileName;  
                         String fileAddrJson = "{'fileAddr':'"+ fileAddr + "'}";
                         return new Result(Code.FILE_OK,fileAddrJson,"文件保存成功");
                     }
