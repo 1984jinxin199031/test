@@ -116,7 +116,9 @@ public class BookController {
                                 e.printStackTrace();
                             }
                         }
-                        String fileAddr = relativePath + fileName;  
+                        //照片上传成功后返回照片信息到页面，用于更新页面显示的照片信息，
+
+                        String fileAddr = relativePath + fileName;
                         String fileAddrJson = "{'fileAddr':'"+ fileAddr + "'}";
                         return new Result(Code.FILE_OK,fileAddrJson,"文件保存成功");
                     }
