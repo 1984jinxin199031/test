@@ -112,6 +112,7 @@ public class BookController {
                                 os.close();
                                 is.close();
                             } catch (IOException e) {
+                                //日志，文件上传失败联系管理员
                                 e.printStackTrace();
                             }
                         }
