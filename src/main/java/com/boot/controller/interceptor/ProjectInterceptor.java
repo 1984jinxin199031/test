@@ -7,6 +7,10 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 
 @Component
 //定义拦截器类，实现HandlerInterceptor接口
@@ -17,11 +21,44 @@ public class ProjectInterceptor implements HandlerInterceptor {
         String contentType = request.getHeader("Content-Type");
         HandlerMethod hm = (HandlerMethod)handler;
         //        System.out.println("preHandle..."+contentType);
-        System.out.println(request.getRequestURI());
-        System.out.println(request.getRequestURL());
+//        System.out.println("raw" + readRaw(request));
+//        System.out.println(request.getRequestURI());
+//        System.out.println(request.getRequestURL());
         System.out.println("preHandle...");
         return true;
 
+    }
+
+    /**
+     * 获取request的raw里的数据
+     * @param request
+     * @return
+     */
+    public String readRaw(HttpServletRequest request) {
+        String result = "";
+        InputStream inputStream = null;
+        ByteArrayOutputStream outSteam = null;
+        try {
+            inputStream = request.getInputStream();
+            outSteam = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = inputStream.read(buffer)) != -1) {
+                outSteam.write(buffer, 0, len);
+            }
+            result = new String(outSteam.toByteArray(), "UTF-8");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        finally {
+            try {
+                outSteam.close();
+                inputStream.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return result;
     }
 
     @Override
