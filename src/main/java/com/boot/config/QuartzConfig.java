@@ -5,10 +5,10 @@ import org.quartz.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+//@Configuration
 public class QuartzConfig {
     //构建 JobDetail
-    @Bean
+//    @Bean
     public JobDetail downloadDetail() {
         return JobBuilder.newJob(DownloadJob.class) //具体任务类
                 //给 JobDetail 起一个 id, 不写也会自动生成唯一的 TriggerKey
@@ -20,7 +20,7 @@ public class QuartzConfig {
                 .build();
     }
     //构建 Trigger 及 Scheduler
-    @Bean
+//    @Bean
     public Trigger downloadTrigger() {
         return TriggerBuilder.newTrigger()
                 .forJob(downloadDetail())  //关联上面的 jobDetail
