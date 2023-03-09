@@ -82,9 +82,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .exceptionHandling()
                 .authenticationEntryPoint((req, resp, ex) -> {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("msg", "请登录!");
                     resp.setContentType("application/json;charset=UTF-8");
                     resp.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    resp.getWriter().println("请认证之后再去处理!");
+                    String s = new ObjectMapper().writeValueAsString(result);
+                    resp.getWriter().println(s);
                 })
                 .and()
                 .logout()
