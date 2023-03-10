@@ -15,14 +15,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.rememberme.InMemoryTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
-import org.springframework.session.FindByIndexNameSessionRepository;
-import org.springframework.session.security.SpringSessionBackedSessionRegistry;
-
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.util.HashMap;
@@ -36,8 +32,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private DataSource dataSource;
     //session和redis连通
-    @Autowired
-    private FindByIndexNameSessionRepository findByIndexNameSessionRepository;
+//    @Autowired
+//    private FindByIndexNameSessionRepository findByIndexNameSessionRepository;
 
     private final MyUserDetailService myUserDetailService;
     @Autowired
@@ -122,28 +118,28 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .logoutSuccessHandler((req, resp, auth) -> {//注销成功响应的json
                     Map<String, Object> result = new HashMap<>();
                     result.put("msg", "注销成功");
-                    result.put("用户信息", auth.getPrincipal());
+//                    result.put("用户信息", auth.getPrincipal());
                     resp.setContentType("application/json;charset=UTF-8");
                     resp.setStatus(HttpStatus.OK.value());
                     String s = new ObjectMapper().writeValueAsString(result);
                     resp.getWriter().println(s);
                 })
                 .and()
-                .csrf().disable();
-//                .sessionManagement()//开启登录会话管理
-//                .maximumSessions(1)//允许登录会话最大并发只能一个客户端;
-//                .expiredSessionStrategy(event -> { //登录会话失效显示的json
-//                    HttpServletResponse response = event.getResponse();
-//                    Map<String, Object> result = new HashMap<>();
-//                    result.put("status", 500);
-//                    result.put("msg", "当前会话已经失效,请重新登录!");
-//                    String s = new ObjectMapper().writeValueAsString(result);
-//                    response.setContentType("application/json;charset=UTF-8");
-//                    response.getWriter().println(s);
-//                    response.flushBuffer();
-//                })
-//                .sessionRegistry(sessionRegistry()) //将 session 交给谁管理(redis)
-//                .maxSessionsPreventsLogin(true);//一旦登录禁止再次登录，除非用户注销
+                .csrf().disable()
+                .sessionManagement()//开启登录会话管理
+                .maximumSessions(1)//允许登录会话最大并发只能一个客户端;
+                .expiredSessionStrategy(event -> { //登录会话失效显示的json
+                    HttpServletResponse response = event.getResponse();
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("status", 500);
+                    result.put("msg", "当前会话已经失效,请重新登录!");
+                    String s = new ObjectMapper().writeValueAsString(result);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().println(s);
+                    response.flushBuffer();
+                })
+//                .sessionRegistry(sessionRegistry()) //将 session 交给谁管理(redis) 有BUG
+                .maxSessionsPreventsLogin(true);//一旦登录禁止再次登录，除非用户注销
 
 
         // at: 用来某个 filter 替换过滤器链中哪个 filter
@@ -170,8 +166,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     //创建 session 同步到 redis 中方案
-    @Bean
-    public SpringSessionBackedSessionRegistry sessionRegistry() {
-        return new SpringSessionBackedSessionRegistry(findByIndexNameSessionRepository);
-    }
+//    @Bean
+//    public SpringSessionBackedSessionRegistry sessionRegistry() {
+//        return new SpringSessionBackedSessionRegistry(findByIndexNameSessionRepository);
+//    }
 }
