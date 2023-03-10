@@ -1,7 +1,9 @@
 package com.boot.domain;
 
+import java.io.Serializable;
+
 //角色类
-public class Role {
+public class Role implements Serializable {
     private Integer id;
     private String name;
     private String nameZh;

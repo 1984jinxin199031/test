@@ -1,7 +1,11 @@
 package com.boot.security.filter;
 
 import com.boot.security.filter.exception.KaptchaNotMatchException;
+import com.boot.util.HttpUtil;
+import com.boot.util.RedisUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -11,6 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.rememberme.AbstractRememberMeServices;
 import org.springframework.util.ObjectUtils;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -18,6 +23,9 @@ import java.util.Map;
 
 //自定义 filter
 public class LoginKaptchaFilter extends UsernamePasswordAuthenticationFilter {
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     public static final String FORM_KAPTCHA_KEY = "kaptcha";
 
@@ -39,7 +47,7 @@ public class LoginKaptchaFilter extends UsernamePasswordAuthenticationFilter {
         }
         try {
             if (request.getContentType().equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE)) {//2.判断是否是 json 格式请求类型
-                //3.从 json 数据中获取用户输入用户名和密码进行认证 {"uname":"xxx","password":"xxx","remember-me":true}
+                //3.从 json 数据中获取用户输入用户名和密码进行认证 {"uname":"xxx","password":"xxx","kaptcha":"0312","remember-me":"true"}
                 //1.获取请求数据
                 Map<String, String> userInfo = new ObjectMapper().readValue(request.getInputStream(), Map.class);
                 String kaptcha = userInfo.get(getKaptchaParameter());//用来获取数据中验证码
@@ -50,8 +58,8 @@ public class LoginKaptchaFilter extends UsernamePasswordAuthenticationFilter {
                     request.setAttribute(AbstractRememberMeServices.DEFAULT_PARAMETER, rememberValue);
                 }
                 System.out.println("用户名：" + username + "，密码：" + password + "，验证码：" + kaptcha + "，是否记住我: " + rememberValue);
-                //2.获取 session 中验证码
-                String sessionVerifyCode = (String) request.getSession().getAttribute("kaptcha");
+                //2.获取 redis 中验证码
+                String sessionVerifyCode = RedisUtil.getKeyValue(username, redisTemplate);
                 if (!ObjectUtils.isEmpty(kaptcha) && !ObjectUtils.isEmpty(sessionVerifyCode) &&
                         kaptcha.equalsIgnoreCase(sessionVerifyCode)) {
                     //3.获取用户名 和密码认证
@@ -62,9 +70,10 @@ public class LoginKaptchaFilter extends UsernamePasswordAuthenticationFilter {
             }
         } catch (IOException e) {
 
-
+            //日志邮件
             e.printStackTrace();
         }
+        //日志邮件
         throw new KaptchaNotMatchException("验证码不匹配!");
     }
 }

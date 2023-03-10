@@ -20,7 +20,10 @@ import org.springframework.security.web.authentication.rememberme.JdbcTokenRepos
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,6 +35,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     //记住我令牌保存的数据源
     @Autowired
     private DataSource dataSource;
+    //session和redis连通
+    @Autowired
+    private FindByIndexNameSessionRepository findByIndexNameSessionRepository;
 
     private final MyUserDetailService myUserDetailService;
     @Autowired
@@ -124,6 +130,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 })
                 .and()
                 .csrf().disable();
+//                .sessionManagement()//开启登录会话管理
+//                .maximumSessions(1)//允许登录会话最大并发只能一个客户端;
+//                .expiredSessionStrategy(event -> { //登录会话失效显示的json
+//                    HttpServletResponse response = event.getResponse();
+//                    Map<String, Object> result = new HashMap<>();
+//                    result.put("status", 500);
+//                    result.put("msg", "当前会话已经失效,请重新登录!");
+//                    String s = new ObjectMapper().writeValueAsString(result);
+//                    response.setContentType("application/json;charset=UTF-8");
+//                    response.getWriter().println(s);
+//                    response.flushBuffer();
+//                })
+//                .sessionRegistry(sessionRegistry()) //将 session 交给谁管理(redis)
+//                .maxSessionsPreventsLogin(true);//一旦登录禁止再次登录，除非用户注销
 
 
         // at: 用来某个 filter 替换过滤器链中哪个 filter
@@ -147,5 +167,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public RememberMeServices rememberMeServices() {
         return new MyPersistentTokenBasedRememberMeServices(UUID.randomUUID().toString(), userDetailsService(), persistentTokenRepository());
+    }
+
+    //创建 session 同步到 redis 中方案
+    @Bean
+    public SpringSessionBackedSessionRegistry sessionRegistry() {
+        return new SpringSessionBackedSessionRegistry(findByIndexNameSessionRepository);
     }
 }

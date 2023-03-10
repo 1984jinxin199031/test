@@ -27,10 +27,11 @@ public class MyPersistentTokenBasedRememberMeServices extends PersistentTokenBas
      */
     @Override
     protected boolean rememberMeRequested(HttpServletRequest request, String parameter) {
-        String paramValue = request.getAttribute(parameter).toString();
+        Object paramValue = request.getAttribute(parameter);
         if (paramValue != null) {
-            if (paramValue.equalsIgnoreCase("true") || paramValue.equalsIgnoreCase("on")
-                    || paramValue.equalsIgnoreCase("yes") || paramValue.equals("1")) {
+            String value = paramValue.toString();
+            if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("on")
+                    || value.equalsIgnoreCase("yes") || value.equals("1")) {
                 return true;
             }
         }
