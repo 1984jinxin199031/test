@@ -1,6 +1,8 @@
 server:
   port: 9985
-
+  servlet:
+    session:
+      timeout: 1
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource

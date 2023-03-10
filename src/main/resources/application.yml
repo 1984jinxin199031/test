@@ -1,6 +1,9 @@
 server:
   port: 9985
-
+  #测试用session会话过期时间：分钟
+  servlet:
+    session:
+      timeout: 1
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
@@ -8,7 +11,7 @@ spring:
     url: jdbc:mysql://localhost:3306/testdb
 #    ?characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC
     username: root
-    password: 
+    password:
 
 mybatis:
   mapper-locations: classpath:com/boot/mapper/*.xml

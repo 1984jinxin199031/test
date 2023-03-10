@@ -1,6 +1,7 @@
 package com.boot.config;
 
 import com.boot.security.filter.LoginKaptchaFilter;
+import com.boot.security.rememberMe.MyPersistentTokenBasedRememberMeServices;
 import com.boot.service.MyUserDetailService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,18 +13,27 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.InMemoryTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
+import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Configuration
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final MyUserDetailService myUserDetailService;
+    //记住我令牌保存的数据源
+    @Autowired
+    private DataSource dataSource;
 
+    private final MyUserDetailService myUserDetailService;
     @Autowired
     public SecurityConfig(MyUserDetailService myUserDetailService) {
         this.myUserDetailService = myUserDetailService;
@@ -50,6 +60,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         loginKaptchaFilter.setPasswordParameter("passwd");//指定接收 json 密码 key
         loginKaptchaFilter.setKaptchaParameter("kaptcha");//验证码 key
         loginKaptchaFilter.setAuthenticationManager(authenticationManagerBean());
+        loginKaptchaFilter.setRememberMeServices(rememberMeServices()); //设置认证成功时使用自定义rememberMeService
         //认证成功处理
         loginKaptchaFilter.setAuthenticationSuccessHandler((req, resp, authentication) -> {
             Map<String, Object> result = new HashMap<>();
@@ -76,12 +87,19 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
                 .mvcMatchers("/vc.jpg").permitAll()
+                //.mvcMatchers("/index").rememberMe()  //指定资源记住我
                 .anyRequest().authenticated()//所有请求必须认证
                 .and()
                 .formLogin()
                 .and()
+                .rememberMe() //开启记住我功能  cookie 进行实现  1.认证成功保存记住我 cookie 到客户端   2.只有 cookie 写入客户端成功才能实现自动登录功能
+//                .tokenRepository(persistentTokenRepository())//持久化令牌，下面rememberMeServices已经设置完持久化cookie令牌了
+                .rememberMeServices(rememberMeServices())  //设置自动登录使用哪个 rememberMeServices
+                //.rememberMeParameter("remember-me") 用来接收请求中哪个参数作为开启记住我的参数
+                //.alwaysRemember(true) //总是记住我
+                .and()
                 .exceptionHandling()
-                .authenticationEntryPoint((req, resp, ex) -> {
+                .authenticationEntryPoint((req, resp, ex) -> {//未登录(认证)时响应的json
                     Map<String, Object> result = new HashMap<>();
                     result.put("msg", "请登录!");
                     resp.setContentType("application/json;charset=UTF-8");
@@ -95,7 +113,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         new AntPathRequestMatcher("/logout", HttpMethod.DELETE.name()),
                         new AntPathRequestMatcher("/logout", HttpMethod.GET.name())
                 ))
-                .logoutSuccessHandler((req, resp, auth) -> {
+                .logoutSuccessHandler((req, resp, auth) -> {//注销成功响应的json
                     Map<String, Object> result = new HashMap<>();
                     result.put("msg", "注销成功");
                     result.put("用户信息", auth.getPrincipal());
@@ -112,5 +130,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // before: 放在过滤器链中哪个 filter 之前
         // after: 放在过滤器链中那个 filter 之后
         http.addFilterAt(loginFilter(), UsernamePasswordAuthenticationFilter.class);
+    }
+
+    /**
+     * 指定数据库持久化
+     * @return
+     */
+    @Bean
+    public PersistentTokenRepository persistentTokenRepository() {
+        JdbcTokenRepositoryImpl jdbcTokenRepository = new JdbcTokenRepositoryImpl();
+        jdbcTokenRepository.setDataSource(dataSource);
+        jdbcTokenRepository.setCreateTableOnStartup(false);//启动创建表结构，第一次用时设置未true
+        return jdbcTokenRepository;
+    }
+
+    @Bean
+    public RememberMeServices rememberMeServices() {
+        return new MyPersistentTokenBasedRememberMeServices(UUID.randomUUID().toString(), userDetailsService(), persistentTokenRepository());
     }
 }
