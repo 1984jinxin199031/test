@@ -78,7 +78,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
-        <!--   开放redis管理session后会导致登录成功了也无效BUG  -->
+        <!--   开放redis管理session后会导致登录成功了也无效BUG，BUG不解决效果就是无法集群部署此项目  -->
 <!--        <dependency>-->
 <!--            <groupId>org.springframework.session</groupId>-->
 <!--            <artifactId>spring-session-data-redis</artifactId>-->

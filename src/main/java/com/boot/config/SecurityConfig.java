@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import javax.servlet.http.HttpServletResponse;
@@ -125,7 +126,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     resp.getWriter().println(s);
                 })
                 .and()
-                .csrf().disable()
+                .csrf()
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())//将令牌保存到 cookie 中 允许 cookie 前端获取
+                .and()
                 .sessionManagement()//开启登录会话管理
                 .maximumSessions(1)//允许登录会话最大并发只能一个客户端;
                 .expiredSessionStrategy(event -> { //登录会话失效显示的json
