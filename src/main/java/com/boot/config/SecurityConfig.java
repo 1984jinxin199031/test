@@ -20,8 +20,13 @@ import org.springframework.security.web.authentication.rememberme.PersistentToke
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,15 +35,15 @@ import java.util.UUID;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     //记住我令牌保存的数据源
-    @Autowired
-    private DataSource dataSource;
+    private final DataSource dataSource;
     //session和redis连通
 //    @Autowired
 //    private FindByIndexNameSessionRepository findByIndexNameSessionRepository;
 
     private final MyUserDetailService myUserDetailService;
     @Autowired
-    public SecurityConfig(MyUserDetailService myUserDetailService) {
+    public SecurityConfig(DataSource dataSource, MyUserDetailService myUserDetailService) {
+        this.dataSource = dataSource;
         this.myUserDetailService = myUserDetailService;
     }
 
@@ -94,6 +99,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated()//所有请求必须认证
                 .and()
                 .formLogin()
+//                .and()
+//                .cors()//开启跨域
+//                .configurationSource(configurationSource())//跨域配置
                 .and()
                 .rememberMe() //开启记住我功能  cookie 进行实现  1.认证成功保存记住我 cookie 到客户端   2.只有 cookie 写入客户端成功才能实现自动登录功能
 //                .tokenRepository(persistentTokenRepository())//持久化令牌，下面rememberMeServices已经设置完持久化cookie令牌了
@@ -101,7 +109,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 //.rememberMeParameter("remember-me") 用来接收请求中哪个参数作为开启记住我的参数
                 //.alwaysRemember(true) //总是记住我
                 .and()
-                .exceptionHandling()
+                .exceptionHandling()//异常处理
                 .authenticationEntryPoint((req, resp, ex) -> {//未登录(认证)时响应的json
                     Map<String, Object> result = new HashMap<>();
                     result.put("msg", "请登录!");
@@ -109,6 +117,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     resp.setStatus(HttpStatus.UNAUTHORIZED.value());
                     String s = new ObjectMapper().writeValueAsString(result);
                     resp.getWriter().println(s);
+                })
+                .accessDeniedHandler((request, response, e) -> {//授权不通过时响应的json
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.setStatus(HttpStatus.FORBIDDEN.value());
+                    response.getWriter().write("无权访问!");
                 })
                 .and()
                 .logout()
@@ -142,7 +155,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     response.flushBuffer();
                 })
 //                .sessionRegistry(sessionRegistry()) //将 session 交给谁管理(redis) 有BUG
-                .maxSessionsPreventsLogin(true);//一旦登录禁止再次登录，除非用户注销
+                .maxSessionsPreventsLogin(true);//一旦登录禁止再次登录，除非用户注销;
+
 
 
         // at: 用来某个 filter 替换过滤器链中哪个 filter
@@ -173,4 +187,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //    public SpringSessionBackedSessionRegistry sessionRegistry() {
 //        return new SpringSessionBackedSessionRegistry(findByIndexNameSessionRepository);
 //    }
+
+    /**
+     * 跨域配置
+     * @return
+     */
+    CorsConfigurationSource configurationSource() {
+        CorsConfiguration corsConfiguration = new CorsConfiguration();
+        corsConfiguration.setAllowedHeaders(Arrays.asList("*"));
+        corsConfiguration.setAllowedMethods(Arrays.asList("*"));
+        corsConfiguration.setAllowedOrigins(Arrays.asList("*"));
+        corsConfiguration.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfiguration);
+        return source;
+    }
 }
+

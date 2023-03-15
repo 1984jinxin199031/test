@@ -55,7 +55,7 @@ public class BookController {
         return new Result(code,bookList,msg);
     }
 
-    @RequestMapping("page/{pageNo}&{pageNum}")
+    @GetMapping("page/{pageNo}&{pageNum}")
     public Result getPage(@PathVariable Integer pageNo, @PathVariable Integer pageNum) {
         List<Book> bookList = bookService.getPage(pageNo, pageNum);
         Integer code = bookList != null ? Code.GET_OK : Code.GET_ERR;
