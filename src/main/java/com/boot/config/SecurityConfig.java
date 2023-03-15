@@ -1,18 +1,24 @@
 package com.boot.config;
 
 import com.boot.security.filter.LoginKaptchaFilter;
+import com.boot.security.metasource.CustomerSecurityMetaSource;
 import com.boot.security.rememberMe.MyPersistentTokenBasedRememberMeServices;
 import com.boot.service.MyUserDetailService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configurers.UrlAuthorizationConfigurer;
+import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
@@ -32,8 +38,10 @@ import java.util.Map;
 import java.util.UUID;
 
 @Configuration
+@EnableGlobalMethodSecurity(prePostEnabled = true,jsr250Enabled = true,securedEnabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-
+    //动态获取授权数据
+    private final CustomerSecurityMetaSource customerSecurityMetaSource;
     //记住我令牌保存的数据源
     private final DataSource dataSource;
     //session和redis连通
@@ -42,7 +50,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final MyUserDetailService myUserDetailService;
     @Autowired
-    public SecurityConfig(DataSource dataSource, MyUserDetailService myUserDetailService) {
+    public SecurityConfig(CustomerSecurityMetaSource customerSecurityMetaSource, DataSource dataSource, MyUserDetailService myUserDetailService) {
+        this.customerSecurityMetaSource = customerSecurityMetaSource;
         this.dataSource = dataSource;
         this.myUserDetailService = myUserDetailService;
     }
@@ -93,6 +102,20 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        //1.获取工厂对象
+        ApplicationContext applicationContext = http.getSharedObject(ApplicationContext.class);
+        //2.设置自定义 url 权限处理
+        http.apply(new UrlAuthorizationConfigurer<>(applicationContext))
+                .withObjectPostProcessor(new ObjectPostProcessor<FilterSecurityInterceptor>() {
+                    @Override
+                    public <O extends FilterSecurityInterceptor> O postProcess(O object) {
+                        object.setSecurityMetadataSource(customerSecurityMetaSource);
+                        //是否拒绝公共资源访问
+                        object.setRejectPublicInvocations(false);
+                        return object;
+                    }
+                });
+
         http.authorizeRequests()
                 .mvcMatchers("/vc.jpg").permitAll()
                 //.mvcMatchers("/index").rememberMe()  //指定资源记住我
