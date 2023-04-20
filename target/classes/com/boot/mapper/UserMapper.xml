@@ -23,7 +23,7 @@
     <select id="getRolesByUid" resultType="Role">
         select r.id,
                r.name,
-               r.name_zh nameZh
+               r.namechn namechn
         from role r,
              user_role ur
         where r.id = ur.rid

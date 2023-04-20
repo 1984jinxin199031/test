@@ -10,12 +10,12 @@
         <collection property="roles" ofType="com.boot.domain.Role">
             <id column="rid" property="id"/>
             <result column="rname" property="name"/>
-            <result column="rnameZh" property="nameZh"/>
+            <result column="namechn" property="namechn"/>
         </collection>
     </resultMap>
 
     <select id="findByPattern" resultMap="MenuResultMap">
-        select m.*, r.id as rid, r.name as rname, r.nameZh as rnameZh
+        select m.*, r.id as rid, r.name as rname, r.namechn as namechn
         from menu m
         left join menu_role mr on m.`id` = mr.`mid`
         left join role r on r.`id` = mr.`rid`
@@ -23,7 +23,7 @@
     </select>
 
     <select id="getAllMenu" resultMap="MenuResultMap">
-        select m.*, r.id as rid, r.name as rname, r.nameZh as rnameZh
+        select m.*, r.id as rid, r.name as rname, r.namechn as namechn
         from menu m
                  left join menu_role mr on m.`id` = mr.`mid`
                  left join role r on r.`id` = mr.`rid`

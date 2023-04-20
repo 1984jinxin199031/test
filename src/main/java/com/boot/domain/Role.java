@@ -6,7 +6,7 @@ import java.io.Serializable;
 public class Role implements Serializable {
     private Integer id;
     private String name;
-    private String nameZh;
+    private String namechn;
 
     public Integer getId() {
         return id;
@@ -25,10 +25,10 @@ public class Role implements Serializable {
     }
 
     public String getNameZh() {
-        return nameZh;
+        return namechn;
     }
 
     public void setNameZh(String nameZh) {
-        this.nameZh = nameZh;
+        this.namechn = nameZh;
     }
 }

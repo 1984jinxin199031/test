@@ -29,7 +29,6 @@ import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.util.Arrays;
@@ -117,7 +116,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 });
 
         http.authorizeRequests()
-                .mvcMatchers("/vc.jpg").permitAll()
+//                .mvcMatchers("/excel/export").permitAll()
                 //.mvcMatchers("/index").rememberMe()  //指定资源记住我
                 .anyRequest().authenticated()//所有请求必须认证
                 .and()
